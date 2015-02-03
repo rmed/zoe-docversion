@@ -76,9 +76,7 @@ class Docversion:
         if not os.path.isdir(version_path):
             return self.feedback("Cannot find version", sender, "jabber")
 
-        doc_list = []
-        for dirname, subdir, flist in os.walk(version_path):
-            doc_list = subdir
+        doc_list = sorted(os.listdir(version_path))
 
         return self.feedback("\n".join(doc_list), sender, "jabber")
 
@@ -111,9 +109,7 @@ class Docversion:
         with open(CONF_FILE, "r") as conf:
             base_path = conf.readline().rstrip()
 
-        ver_list = []
-        for dirname, subdir, flist in os.walk(base_path):
-            ver_list.append(dirname)
+        ver_list = sorted(os.listdir(base_path))
 
         return self.feedback("\n".join(ver_list), sender, "jabber")
 
