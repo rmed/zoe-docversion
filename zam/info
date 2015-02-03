@@ -1,0 +1,7 @@
+agent = docversion
+version = 0.1.0
+license = MIT
+maintainer = Rafael Medina García <rafamedgar@gmail.com>
+script = docversion.py
+topics =
+description = Simple way for managing document versions for Software Project Management subject

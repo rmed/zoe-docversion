@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+# Create config files
+touch ${ZOE_HOME}/etc/docversion.conf
+touch ${ZOE_HOME}/etc/docversion.changes
