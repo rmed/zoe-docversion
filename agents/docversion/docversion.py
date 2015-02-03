@@ -32,7 +32,6 @@ import shutil
 import zoe
 from os import environ as env
 from os.path import join as path
-from semantic_version import Version
 from zoe.deco import *
 
 CONF_FILE = path(env["ZOE_HOME"], "etc", "docversion.conf")
@@ -66,6 +65,23 @@ class Docversion:
                 self.feedback("Sending document to " + to, sender, "jabber"),
                 self.feedback(attachment, to, "mail", subject))
 
+    @Message(tags=["docs"])
+    def show_docs(self, version, sender):
+        """ Show documents in specific version number. """
+        with open(CONF_FILE, "r") as conf:
+            base_path = conf.readline().rstrip()
+
+        version_path = path(base_path, version)
+
+        if not os.path.isdir(version_path):
+            return self.feedback("Cannot find version", sender, "jabber")
+
+        doc_list = []
+        for dirname, subdir, flist in os.walk(version_path):
+            doc_list = subdir
+
+        return self.feedback("\n".join(doc_list), sender, "jabber")
+
     @Message(tags=["store"])
     def store(self, version, name, att, sender):
         """ Store the document obtained in the attachment. """
@@ -88,6 +104,18 @@ class Docversion:
             log.write(message)
 
         return self.feedback(message, "rafa", "jabber")
+
+    @Message(tags=["versions"])
+    def versions(self, sender):
+        """ Tell the sender the versions available. """
+        with open(CONF_FILE, "r") as conf:
+            base_path = conf.readline().rstrip()
+
+        ver_list = []
+        for dirname, subdir, flist in os.walk(base_path):
+            ver_list.append(dirname)
+
+        return self.feedback("\n".join(ver_list), sender, "jabber")
 
     def create_attachment(self, dpath):
         """ Create an attachment given the path of the document. """
