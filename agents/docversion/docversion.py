@@ -42,18 +42,67 @@ LOG_FILE = path(env["ZOE_HOME"], "etc", "docversion.changes")
 class Docversion:
 
     @Message(tags=["send"])
-    def send(self, version, name, filetype, sender, to=None):
+    def send(self, version, name, sender, to=None):
         """ Send a document to the user or the provided email address. """
         base_path = self.get_path()
 
-        doc_path = path(base_path, version, name, "doc." + filetype)
-        if not os.path.isfile(doc_path):
-            message = "Didn't find version %s for document %s in format %s" % (
-                version, name, filetype)
+        doc_path = path(base_path, name, version)
+        if not os.path.isdir(doc_path):
+            message = "Didn't find version %s for document %s" % (
+                version, name)
             return self.feedback(message, sender, "jabber")
 
-        attachment = self.create_attachment(doc_path)
+        self.clean_state(sender)
+
+        # Obtain list of files
+        flist = sorted(
+            [f for f in os.listdir(doc_path) if os.path.isfile(path(doc_path, f))])
+
+        if not flist:
+            message = "There are no files for this document in this version"
+            return self.feedback(message, sender, "jabber")
+
+        for f in flist:
+            state_msg = zoe.MessageBuilder({
+                "dst":"relay",
+                "relayto":"docversion",
+                "sender":sender,
+                "tag":"docfile",
+                "version":version,
+                "name":name,
+                "filename":f,
+                "to":to or sender
+            })
+
+            bus_msg = zoe.MessageBuilder({
+                "dst":"relay",
+                "tag":"relay",
+                "relayto":"jabber",
+                "to":sender,
+                "msg":f
+            })
+
+            # Commands created are the names of the files that are
+            # available for the document in the given version.
+            zoe.state.Command(sender, f, state_msg)
+
+            self.logger._listener.sendbus(bus_msg.msg())
+
+    @Message(tags=["docfile"])
+    def send_file(self, version, name, filename, sender, to):
+        """ Send specific document that was chosen by user by introducing
+            the filename.
+        """
+        file_path = path(self.get_path(), name, version, filename)
+
+        if not os.path.isfile(file_path):
+            message = "File %s does not exist" % filename
+            return self.feedback(message, sender, "jabber")
+
+        attachment = self.create_attachment(file_path)
         subject = "[%s] %s" % (version, name)
+
+        self.clean_state(sender)
 
         if not to:
             return (
@@ -63,6 +112,7 @@ class Docversion:
             return (
                 self.feedback("Sending document to " + to, sender, "jabber"),
                 self.feedback(attachment, to, "mail", subject))
+
 
     @Message(tags=["docs"])
     def show_docs(self, sender):
@@ -84,7 +134,7 @@ class Docversion:
             os.makedirs(dir_path)
 
         # We may want to change the destination filename
-        dest_path = path(dir_path, docname else os.path.basename(att))
+        dest_path = path(dir_path, docname or os.path.basename(att))
         shutil.move(att, dest_path)
 
         message = "Added version %s of %s (%s) - by %s" % (
@@ -108,12 +158,27 @@ class Docversion:
 
         return self.feedback("\n".join(ver_list), sender, "jabber")
 
+    def clean_state(self, sender):
+        """ Clean temporary state commands. """
+        state_path = path(env["ZOE_VAR"], "state", "commands", sender)
+        if not os.path.isdir(state_path):
+            return
+
+        print("Cleaning temporary state commands")
+
+        for f in os.listdir(state_path):
+            try:
+                os.remove(path(state_path, f))
+            except:
+                # No files?
+                pass
+
     def create_attachment(self, dpath):
         """ Create an attachment given the path of the document. """
         with open(dpath, "rb") as doc:
             data = doc.read()
 
-        mime = mimetypes.guess_type(dpath)
+        mime = mimetypes.guess_type(dpath, strict=False)[0]
         b64 = base64.standard_b64encode(data).decode("utf-8")
 
         return zoe.Attachment(b64, mime, os.path.basename(dpath))
@@ -136,14 +201,14 @@ class Docversion:
         if relayto == "jabber":
             to_send["msg"] = data
         else:
-            to_send["html"] = data.str()
+            to_send["att"] = data.str()
             to_send["subject"] = subject
 
         return zoe.MessageBuilder(to_send)
 
-        def get_path(self):
-            """ Get the base path of the document repository. """
-            with open(CONF_FILE, "r") as conf:
-                base_path = conf.readline().rstrip()
+    def get_path(self):
+        """ Get the base path of the document repository. """
+        with open(CONF_FILE, "r") as conf:
+            base_path = conf.readline().rstrip()
 
-            return base_path
+        return base_path

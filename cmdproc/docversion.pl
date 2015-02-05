@@ -32,7 +32,7 @@ my $versions;
 my $docs;
 
 my $sender;
-my $mail;
+my @mail;
 my @strings;
 
 GetOptions("get" => \$get,
@@ -42,7 +42,7 @@ GetOptions("get" => \$get,
            "st" => \$send_to,
            "v" => \$versions,
            "d" => \$docs,
-           "mail" => \$mail,
+           "mail=s" => \@mails,
            "string=s" => \@strings);
 
 
@@ -62,8 +62,8 @@ if ($get) {
 # Commands in the script
 #
 sub get {
-  print("--sm send me /version <string> /of /document <string> /in /format <string>\n");
-  print("--st send /version <string> /of /document <string> /in /format <string> to <mail>\n");
+  print("--sm send me /version <string> /of /document <string>\n");
+  print("--st send /version <string> /of /document <string> to <mail>\n");
   print("--v show versions /for <string>\n");
   print("--d show /me /versioned documents\n");
 }
@@ -72,14 +72,14 @@ sub get {
 # Send document to sender
 #
 sub send_me {
-  print("message dst=docversion&tag=send&version=$strings[0]&name=$strings[1]&filetype=$string[2]&sender=$sender\n");
+  print("message dst=docversion&tag=send&version=$strings[0]&name=$strings[1]&sender=$sender\n");
 }
 
 #
 # Send document to email
 #
 sub send_to {
-  print("message dst=docversion&tag=send&version=$strings[0]&name=$strings[1]&filetype=$string[2]&sender=$sender&to=$mail\n");
+  print("message dst=docversion&tag=send&version=$strings[0]&name=$strings[1]&sender=$sender&to=@mails[0]\n");
 }
 
 #
