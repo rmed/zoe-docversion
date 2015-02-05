@@ -156,7 +156,7 @@ class Docversion:
         dest_path = path(dir_path, docname or os.path.basename(att))
         shutil.move(att, dest_path)
 
-        message = "Added version %s of %s (%s) - by %s" % (
+        message = "Added version %s of %s (%s) - by %s\n" % (
             version, name, os.path.basename(dest_path), sender)
 
         with open(LOG_FILE, "a") as log:
