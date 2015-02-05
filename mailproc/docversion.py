@@ -63,17 +63,26 @@ def parse_mail(mail):
         with open(att_path, "wb") as att_file:
             att_file.write(part.get_payload(decode=True))
 
-    doc_vers = re.search("doc:(.*)\nversion:(.*)", body, re.IGNORECASE)
+    # Match details
     doc = ""
     vers = ""
-    if doc_vers:
-        print("me")
-        doc = doc_vers.group(1).strip()
-        vers = doc_vers.group(2).strip()
+    docname = ""
+
+    doc_re = re.search("doc:(.*)", body, re.IGNORECASE)
+    if doc_re:
+        doc = doc_re.group(1).strip()
+
+    vers_re = re.search("version:(.*)", body, re.IGNORECASE)
+    if vers_re:
+        vers = vers_re.group(1).strip()
+
+    name_re = re.search("file:(.*)", body, re.IGNORECASE)
+    if name_re:
+        docname = name_re.group(1).strip()
 
     print(
-        "message dst=docversion&tag=store&sender=%s&att=%s&name=%s&version=%s" % (
-            sender, att_path, doc, vers))
+        "message dst=docversion&tag=store&sender=%s&att=%s&name=%s&version=%s&docname=%s" % (
+            sender, att_path, doc, vers, docname))
 
 if __name__ == "__main__":
     parse_mail(sys.argv[1])

@@ -44,8 +44,7 @@ class Docversion:
     @Message(tags=["send"])
     def send(self, version, name, filetype, sender, to=None):
         """ Send a document to the user or the provided email address. """
-        with open(CONF_FILE, "r") as conf:
-            base_path = conf.readline().rstrip()
+        base_path = self.get_path()
 
         doc_path = path(base_path, version, name, "doc." + filetype)
         if not os.path.isfile(doc_path):
@@ -66,50 +65,46 @@ class Docversion:
                 self.feedback(attachment, to, "mail", subject))
 
     @Message(tags=["docs"])
-    def show_docs(self, version, sender):
-        """ Show documents in specific version number. """
-        with open(CONF_FILE, "r") as conf:
-            base_path = conf.readline().rstrip()
+    def show_docs(self, sender):
+        """ Show versioned documents. """
+        base_path = self.get_path()
 
-        version_path = path(base_path, version)
-
-        if not os.path.isdir(version_path):
-            return self.feedback("Cannot find version", sender, "jabber")
-
-        doc_list = sorted(os.listdir(version_path))
+        doc_list = sorted(os.listdir(base_path))
 
         return self.feedback("\n".join(doc_list), sender, "jabber")
 
     @Message(tags=["store"])
-    def store(self, version, name, att, sender):
+    def store(self, version, name, att, sender, docname=None):
         """ Store the document obtained in the attachment. """
-        with open(CONF_FILE, "r") as conf:
-            base_path = conf.readline().rstrip()
+        base_path = self.get_path()
 
         # Create dir if needed
-        dir_path = path(base_path, version, name)
+        dir_path = path(base_path, name, version)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
 
-        filetype = os.path.splitext(att)[1]
+        # We may want to change the destination filename
+        dest_path = path(dir_path, docname else os.path.basename(att))
+        shutil.move(att, dest_path)
 
-        shutil.move(att, path(dir_path, "doc" + filetype))
-
-        message = "Added version %s of %s (%s) in %s" % (
-            version, name, sender, filetype)
+        message = "Added version %s of %s (%s) - by %s" % (
+            version, name, os.path.basename(dest_path), sender)
 
         with open(LOG_FILE, "a") as log:
             log.write(message)
 
-        return self.feedback(message, "rafa", "jabber")
+        return self.feedback(message, "admin", "jabber")
 
     @Message(tags=["versions"])
-    def versions(self, sender):
-        """ Tell the sender the versions available. """
-        with open(CONF_FILE, "r") as conf:
-            base_path = conf.readline().rstrip()
+    def versions(self, document, sender):
+        """ Tell the sender the versions available for a specific document. """
+        base_path = self.get_path()
 
-        ver_list = sorted(os.listdir(base_path))
+        doc_path = path(base_path, document)
+        if not os.path.isdir(doc_path):
+            return self.feedback("Cannot find document", sender, "jabber")
+
+        ver_list = sorted(os.listdir(doc_path))
 
         return self.feedback("\n".join(ver_list), sender, "jabber")
 
@@ -145,3 +140,10 @@ class Docversion:
             to_send["subject"] = subject
 
         return zoe.MessageBuilder(to_send)
+
+        def get_path(self):
+            """ Get the base path of the document repository. """
+            with open(CONF_FILE, "r") as conf:
+                base_path = conf.readline().rstrip()
+
+            return base_path

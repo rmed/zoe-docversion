@@ -64,8 +64,8 @@ if ($get) {
 sub get {
   print("--sm send me /version <string> /of /document <string> /in /format <string>\n");
   print("--st send /version <string> /of /document <string> /in /format <string> to <mail>\n");
-  print("--v show versions\n");
-  print("--d show documents /with /version <string>\n");
+  print("--v show versions /for <string>\n");
+  print("--d show /me /versioned documents\n");
 }
 
 #
@@ -83,15 +83,15 @@ sub send_to {
 }
 
 #
-# Show versions
+# Show versions of a specific document
 #
 sub versions {
-  print("message dst=docversion&tag=versions&sender=$sender\n");
+  print("message dst=docversion&tag=versions&document=$strings[0]&sender=$sender\n");
 }
 
 #
-# Show documents for specific version
+# Show versioned documents
 #
 sub docs {
-  print("message dst=docversion&tag=docs&version=$strings[0]&sender=$sender\n");
+  print("message dst=docversion&tag=docs&sender=$sender\n");
 }
