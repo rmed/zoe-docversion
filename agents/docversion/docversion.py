@@ -123,6 +123,25 @@ class Docversion:
 
         return self.feedback("\n".join(doc_list), sender, "jabber")
 
+    @Message(tags=["files"])
+    def show_files(self, name, version, sender):
+        """ Show the user a list of files por a specific document. """
+        doc_path = path(self.get_path(), name, version)
+
+        if not os.path.isdir(doc_path):
+            message = "Didn't find version %s for document %s" % (
+                version, name)
+            return self.feedback(message, sender, "jabber")
+
+        flist = sorted(
+            [f for f in os.listdir(doc_path) if os.path.isfile(path(doc_path, f))])
+
+        if not flist:
+            message = "There are no files for this document in this version"
+            return self.feedback(message, sender, "jabber")
+
+        return self.feedback("\n".join(flist), sender, "jabber")
+
     @Message(tags=["store"])
     def store(self, version, name, att, sender, docname=None):
         """ Store the document obtained in the attachment. """

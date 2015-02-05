@@ -30,6 +30,7 @@ my $send_me;
 my $send_to;
 my $versions;
 my $docs;
+my $files;
 
 my $sender;
 my @mail;
@@ -42,6 +43,7 @@ GetOptions("get" => \$get,
            "st" => \$send_to,
            "v" => \$versions,
            "d" => \$docs,
+           "f" => \$files,
            "mail=s" => \@mails,
            "string=s" => \@strings);
 
@@ -55,7 +57,9 @@ if ($get) {
 } elsif ($run and $versions) {
   &versions;
 } elsif ($run and $docs) {
-  &docs
+  &docs;
+} elsif ($run and $files) {
+  &files;
 }
 
 #
@@ -66,6 +70,7 @@ sub get {
   print("--st send /version <string> /of /document <string> to <mail>\n");
   print("--v show versions /for <string>\n");
   print("--d show /me /versioned documents\n");
+  print("--f show /me files for /document <string> /in /version <string>\n");
 }
 
 #
@@ -79,7 +84,7 @@ sub send_me {
 # Send document to email
 #
 sub send_to {
-  print("message dst=docversion&tag=send&version=$strings[0]&name=$strings[1]&sender=$sender&to=@mails[0]\n");
+  print("message dst=docversion&tag=send&version=$strings[0]&name=$strings[1]&sender=$sender&to=$mails[0]\n");
 }
 
 #
@@ -94,4 +99,11 @@ sub versions {
 #
 sub docs {
   print("message dst=docversion&tag=docs&sender=$sender\n");
+}
+
+#
+# Show files for a specific document in specific version
+#
+sub files {
+  print("message dst=docversion&tag=files&name=$strings[0]&version=$strings[1]&sender=$sender\n");
 }
